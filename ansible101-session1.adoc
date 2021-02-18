@@ -1,0 +1,1094 @@
+= Introduction to Ansible for Newbies
+:author: Christoph Stoettner <stoeps@vegardit.com>
+:backend: revealjs
+:imagesdir: images
+:icons: font
+:source-highlighter: highlightjs
+:highlightjs-languages: clojure,yaml
+:revealjs_theme: moon
+:revealjs_controls: false
+:revealjs_progress: false
+:revealjs_slideNumber: c/t
+:revealjs_showSlideNumber: all
+:revealjs_center: false
+:revealjs_width: 1600
+:revealjs_hash: true
+:!figure-caption:
+:hide-uri-scheme:
+:customcss: custom.css
+:twitter-tag: @stoeps
+:conference-tag: OpenNTF Webinar
+// See possible licenses at creativecommons.org and in the ifeval beneath
+:license-tag: by-nc-sa
+
+ifeval::["{license-tag}" == "by"]
+:license-long: Creative Commons Attribution 4.0 International License
+endif::[]
+ifeval::["{license-tag}" == "by-nc"]
+:license-long: Creative Commons Attribution-NonCommercial 4.0 International License
+endif::[]
+ifeval::["{license-tag}" == "by-nc-nd"]
+:license-long: Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License
+endif::[]
+ifeval::["{license-tag}" == "by-nc-sa"]
+:license-long: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
+endif::[]
+ifeval::["{license-tag}" == "by-nd"]
+:license-long: Creative Commons Attribution-NoDerivatives 4.0 International License
+endif::[]
+ifeval::["{license-tag}" == "by-sa"]
+:license-long: Creative Commons Attribution-ShareAlike 4.0 International License
+endif::[]
+////
+Slides
+
+Limits:
+4 bullets per slide
+8 words per bullet
+////
+[speaker.notes]
+--
+Hello and welcome to the session "Introduction to Ansible for Newbies".
+--
+
+== Who am I?
+
+* Christoph Stoettner
+* Senior Consultant @Vegard IT
+* Focusing on HCL Connections deployments and migrations
+* Ansible since 2017 -- Social Connections 12 footnote:[https://share.stoeps.de/2017-10-16-ansible4connections.pdf]
+
+NOTE: Example code on https://github.com/stoeps13/ansible-examples[]
+
+[speaker.notes]
+--
+My name is Christoph Stoettner and I'm also known as Stoeps. I'm a Senior Consultant at Vegard IT in Germany and my daily work is mostly filled up with all kind of stuff all around HCL Connections. So troubleshooting, deploying or updating keeps me busy most of my working day.
+
+My first talk about Ansible and Connections was in 2017 during Social Connections in Vienna. The first try to do something automated with Connections was way earlier and ended with a session at Social Connections in Sweden. Where Klaus Bild and I showed some scripts to automatically deploy Connections and its prerequists.
+
+Klaus did the largest part of these scripts and I think the was the starting point for me to think about automatic deployments.
+--
+
+== Handcrafted Servers
+
+* Hard to maintain
+* Setups are not reproducible
+* Complicated vendor documentation
+* Inhouse documentation outdated
+
+[speaker.notes]
+--
+But why are automatic deployments so important?
+
+When I started in IT, we had no virtualization at all and nearly each service or application needed a hardware server to run. You all know the advantages of virtualization like failover, better resource management and so on, but I think the biggest advantage was that we got the possibility to do updates from our desk or server room. In former time we had to buy new sneakers all month and walk to each server and update it manually.
+
+Even with proper documentation or step by step instructions, none of our servers look similar to another. There were different versions of libraries, drivers and databases. Updates were long planned and were really hard to test or prepare.
+
+Like today vendor documentation is complicated and to be honest I can understand that, because it has to cover all customer environments with their different specialities. So we often wrote our own documentation (or better we should have), but even when we did, it was outdated most of the time.
+
+And the same applies to server documentation.
+
+Today I know all manually configured servers are a danger and earlier or later they provide problems!
+--
+
+== Immutable versus mutable server
+
+* Mutable infrastructure just gets updates
+** Software 6.0 -> + Ifix 1 + Ifix 2 + Ifix 3
+** In production 6.0 -> ifix 3
+** Result will be different
+* Immutable creates a new environment with 6.0.x
+** Migrates data after testing
+
+[speaker.notes]
+--
+The DevOps people hate doing inplace updates! It's hard to undo or rollback when tests fail. So it is easier to deploy a new environment (automated), test it with a copy of production data and then move users over to the new installed environment, which is installed clean and fresh.
+
+No surprises during updates, no rollback necessary, because the old environment serves as long the migration worked completely.
+
+I did inplace updates with Connections for example, but they needed way more time, were more stressful and always had to be off the business hours during the night or weekends. When you deploy immutable infrastructure, you just deploy and test during the day. Only the switch from old to new environment can create a short outage.
+--
+
+== Snowflake servers
+
+* Special tweaks or versions needed for proper function
+* Exception of your standards
+* Difficult to reproduce
+* Fragile if they need a change
+
+[speaker.notes]
+--
+Today servers with very special configurations or software versions are titled snowflakes. These servers are not allowed to get operating system updates, because the installed invoicing system was written for Windows NT and the original manufactorer is already bankrupt and can't deliver any update. So your IT has to cuddle this old machine and keep it alive until the project to replace the software will be finished.
+
+Or you have a network device manufactorer who only provides his software for Java 8, so it needs to be installed seperatly and is better never touched.
+
+Nearly each company has a rumor that one special computer under the desktop of the former administrator needs to run all the time, even when nobody can login, because the network just goes down when it is shutdown.
+
+This is a big security issue
+--
+
+== Test Environments
+
+.https://twitter.com/stahnma/status/634849376343429120
+image::testserver-tweet.png[]
+
+[speaker.notes]
+--
+Tweet from 2015 and still valid and I see this just too often.
+
+If you do not take the immutable approach, you need to build test environments which are as similar as possible to production to test updates or migrations. If you don't do this, a production update will be at least an adventure or end in a nightmare.
+--
+
+== Why are dedicated testenvironments important?
+
+* Reliable testing can give you confidence during live migration
+* Applying Fix 3 over Fix 2 over Fix 1 often different from Fix3 over Fix1
+* Use the same scripts to build development, test or production systems
+* Handcrafted is always different from production
+
+[speaker.notes]
+--
+Even with the best and detailed documentation a handcrafted server will be different!
+
+Like a good monitoring system, a well prepared test environment can give administrators the confidence that a migration will succeed and let them sleep before and sometimes during migrations.
+--
+
+== Advantages
+
+* Developer
+** Build a development environment which is compareable to production
+
+* Adminstrator
+** Build a test environment to go through a migration
+
+[speaker.notes]
+--
+Not only administrators can take advantage of test environments. Developers can develop new versions on production comparable machines. So we will not end in discussions like "It runs on my laptop."
+--
+
+== Be as precise as possible
+
+* Avoid different hostnames
+** Production: example.com
+** Test: test.example.com
+* Better:
+** example.com
+** example-test.com
+
+[speaker.notes]
+--
+Some weeks ago I had long SSO troubleshooting hours after successfully tested a software in a test environment. In the end we found out, that the product was irritated of the missing dot, because it expected two dots in a hostname as a minimum. In this case the company saved 11€ a year not having a second hostname, but when I count my hours on that, they could have registered a bunch of hostnames in all available TLDs.
+
+You can reduce node counts, but don't test only single node deployment, if production is a multinode cluster!
+--
+
+== How can we solve this?
+
+* Deployment **and** Application development should follow a fully automated approach
+* Avoid Snowflakes
+* Easier to have a full clone of production as test environment
+* Reducing production bugs caused by configuration differences
+
+[speaker.notes]
+--
+I recommend a fully automated deployment approach in production and test. I wouldn't allow any manual adjustment in production!
+
+So when we can clone our production environments and use these for development and testing, we can reduce or better avoid configuration differences in production. So we can troubleshoot in test environments, prepare the update statements for production without disturbing our users.
+
+Often a complete immutable approach isn't possible, but with the right tool you get very close.
+
+There is even software like Terraform and Vagrant which can create a large amount of servers or containers to use with configuration tools to automatically deploy tools and products.
+
+So even the creation process of your virtual hardware can be automated.
+
+But now what configuration tools are available?
+--
+
+== Automate deployments and configuration changes
+
+* Large ecosystem of tools to do automatic deployments
+** https://en.wikipedia.org/wiki/Comparison_of_open-source_configuration_management_software)[Wikipedia OSS Configuration Management]
+* Puppet https://puppet.com
+* Chef https://www.chef.io
+* Saltstack https://saltstack.com
+* Ansible https://ansible.com
+
+[speaker.notes]
+--
+* You can do a lot already with Powershell or Bash!
+* Puppet
+** Enterprise support
+** Good Windows support too
+** Cryptic
+* Chef
+** I heared it is easy for ruby developers
+* Ansible is easy to learn and needs no client deployed on the target machines
+--
+
+[.columns]
+== Ansible
+
+[.column]
+--
+* Written in Python
+* Encryption and Security built in
+* Easy to read (Everything is YAML)
+* Easy to use (Extensible via modules)
+** Uses SSH
+--
+
+[.column]
+.YAML Tool Kit
+image:ruler.jpg[width=80%]
+
+
+[.columns]
+== Ansible history
+
+[.column]
+* Created by AnsibleWorks Inc, acquired by Red Hat in 2015
+* Initial release: 20. February 2012
+* Stable release: 2.10.6
+* 3.0.0 announced for the 16th of February (two days ago)
+
+[.column]
+image::ansible-logo.png[]
+
+[speaker.notes]
+--
+* renamed to Ansible Inc
+* Several products licensed by Red Hat to extend the funcitonality
+** Ansible Tower <-> Ansible AWX
+* Ansible AWX:
+** AWX provides a web-based user interface, REST API, and task engine built on top of Ansible. It is the upstream project for Tower, a commercial derivative of AWX.
+
+From <https://github.com/ansible/awx
+--
+
+== A very important term: Idempotency
+
+[NOTE]
+--
+.Mathematics
+denoting an element of a set which is unchanged in value when multiplied or otherwise operated on by itself
+--
+
+[speaker.notes]
+--
+Rerunning a task makes only necessary changes
+--
+
+== Idempotency -- Example
+
+* Add entry to hosts
+** Don't add when present
+** Change if different
+* Restart services only when changes were made
+
+.Not idempotent
+[source,bash]
+----
+echo "192.168.1.1 cnx-websphere.example.com" >> /etc/hosts
+----
+
+.Idempotent
+[source,bash]
+----
+grep -qxF '192.168.1.1 cnx-websphere.example.com' /etc/hosts || \
+echo "192.168.1.1 cnx-websphere.example.com" >> /etc/hosts
+----
+
+[speaker.notes]
+--
+Just an example, same relevant for configuration files
+--
+
+== What is Ansible?
+
+* Helps automating tasks during installation and migration
+* Secure (SSH)
+* Open (tons of free playbooks)
+* Well documented
+
+== What is Ansible not?
+
+* A GUI Tool (Get used to console!)footnote:[Ansible Tower and AWX are browser tools]
+* A one click installer
+
+
+[speaker.notes]
+--
+When the playbooks are written really very well it is possible to adjust some variables and get a complete Ansible repository running, but it fails at some point and if you wanna understand the used variables and results, you need some knowledge of Linux, Ansible and the software you install.
+--
+
+== Ansible Installation
+
+* `pip install ansible` on the machine you want to run it
+* Newer version than distribution package
+* Needs internet connection
+* targets need at least `ssh` and `python` installed
+
+[speaker.notes]
+--
+In an ideal world we have access to the internet from every machine, so installing Ansible is not that hard. If you have already python installed, you can run pip install ansible and get the most recent stable version.
+
+But very often we have to work in security optimized environments, where this is not possible. On the hosts you want to do configurations with Ansible you need only OpenSSH and Python installed.
+
+So in my demo environments on my laptop, I use Vagrant to build the virtual machines and add python and my ssh keys with a script on the end of creation process. When you run Vagrant on Mac or Linux, you can run Ansible as a provision task directly, here on Windows I have to create the machines first on the Windows side and then switch to WSL and run the provision tasks through Ansible.
+--
+
+== Windows and Ansible
+
+* Ansible "server" needs Linux (but works with WSL)
+* Windows support through
+** Windows Remote Shell (WinRM)
+** SSH
+
+[speaker.notes]
+--
+A short sentence about Windows. Ansible can't be started natively from Windows, but can be installed and used from Windows Subsystem for Linux!
+
+On the other hand you can configure Windows servers with Ansible too, you just need to use the WinRM protocol, or add SSH to the server.
+--
+
+[.columns]
+== Inventory ini or yaml format
+
+[.column]
+--
+[source, ini]
+----
+[leafs]
+leaf01.example.com
+leaf02.example.com
+
+[spines]
+spine01.example.com
+spine02.example.com
+
+[network:children]
+leafs
+spines
+----
+--
+
+[.column]
+--
+[source, yaml]
+----
+---
+leafs:
+  hosts:
+    leaf01.example.com:
+    leaf02.example.com:
+
+spines:
+  hosts:
+    spine01.example.com:
+    spine02.example.com:
+
+network:
+  children:
+    leafs:
+    spines:
+----
+--
+
+[speaker.notes]
+--
+One important file for Ansible is the so called inventory, here we define hostgroups which are used to run tasks on them.
+
+Inventory files can have two formats: ini and yaml. All other files within Ansible are using the Yaml format, but for inventory it is more convenient to use the ini format.
+--
+
+[.columns]
+== Variables in Inventories
+
+[.column]
+--
+[source, ini]
+----
+[leafs]
+leaf01.example.com
+leaf02.example.com
+
+[leafs:vars]
+username=abc
+----
+--
+
+[.column]
+--
+[source, yaml]
+----
+---
+leafs:
+  hosts:
+    leaf01:
+    leaf02:
+  vars:
+    username: abc
+----
+--
+
+[speaker.notes]
+--
+Different syntax for `ini` and `yaml` files
+* Variables in Playbooks and Variable files in `yaml` syntax, so no copy and paste possible
+--
+
+[.columns]
+== Variables
+
+[.column]
+--
+* Lots of places to define
+* Presedence mportant for large environments
+
+CAUTION: no hyphens in variable names!
+
+.Allowed variable
+[source]
+----
+ldap_user: abc
+----
+
+.Not allowed variable
+[source]
+----
+ldap-user: abc
+----
+--
+
+[.column]
+--
+.https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html[]
+image::vars-presedence.png[width=80%]
+--
+
+[speaker.notes]
+--
+There a lots of places where you can define variables. With the usage of variables the Ansible code gets portable and we can use it on different environments. For the first steps we just define them in the inventory, so differences of environments are in one place.
+
+Please be aware that variables in Ansible can't include the hyphen.
+
+On the right you see the presedence of variables stored in different places, for the first steps, just lets use inventory.
+--
+
+== Playbook
+
+* Run commands (so called tasks) on your inventory servers
+* Select servers or server groups
+* Roles
+* Tasks
+* Handlers
+
+[speaker.notes]
+--
+Playbooks are YAML files that express configurations, deployment, and orchestration in Ansible.
+They allow Ansible to perform operations on managed nodes.
+Each Playbook maps a group of hosts to a set of roles.
+Each role is represented by calls to Ansible tasks.
+
+Tasks = Commands to run
+Handlers = Run something if something else happens (e.g.) only restart service when config changes
+--
+
+== Tasks
+
+* Lots of modules built-in
+** Package install
+** Copy and Edit files
+** Create files and folders (directly and with templates)
+** Manage services
+** Command
+** Shell
+* Sudo aware
+** Become: true
+** Become_user: xyz
+
+== Tasks for different OS
+
+[source, yaml]
+----
+...
+tasks:
+  - name: Install mkpasswd
+    package:  # <.>
+      name: whois
+      state: present
+    when: ansible_os_family == "Redhat"     # <.>
+
+  - name: Install mkpasswd
+    package:  # <.>
+      name: expect
+      state: present
+    when: ansible_distribution == "Ubuntu"  # <.>
+----
+<.> or use `yum`
+<.> valid terms are `Redhat` | `Darwin` | `Debian` | `Windows`
+<.> or use `apt`
+<.> check OS family (Debian) or distribution
+
+== Example (build an Ansible role)
+
+* Most products of IBM or HCL need disabled SELinux during installation
+* So let's disable SELinux on a host
+* Additional steps will be
+** Configure `limits.conf`
+** Reboot after changes
+** Create a user
+** Install packages with `yum`
+* All example files can be found at https://github.com/stoeps13/ansible-examples[]
+** Branches named for the steps
+
+=== Disable SELinux (Inventory)
+
+.`inventory`
+[source,ini]
+----
+[websphere_servers]
+cnx-was.stoeps.internal # <.>
+----
+<.> if hostname is resolvable that is enough
+
+.Sometimes you need to add IP or SSH Port! For example
+[source, ini]
+----
+[websphere_servers]
+cnx-was.stoeps.internal ansible_host=10.0.11.101 ansible_port=2222
+----
+
+=== Set SELinux to `permissive`
+
+.`playbook.yml`
+[source, yaml]
+----
+---
+- hosts: websphere_servers  # <.>
+  become: yes               # <.>
+  become_user: root         # <.>
+  tasks:                    # <.>
+    - name: ensure selinux is set to permissive
+      selinux:              # <.>
+        policy: targeted
+        state: permissive   # <.>
+----
+<.> Run this tasks on this server group
+<.> Use `sudo` to execute command
+<.> `sudo` to user `root`
+<.> tasks (one or multiple tasks)
+<.> use module `selinux`
+<.> `policy` and `state` are arguments / parameters for module `selinux`
+
+[%notitle]
+=== Run Playbook Video Step 1
+
+.https://youtu.be/g8OvWIcmNgU[]
+video::g8OvWIcmNgU[youtube,options=autoplay,height=850px]
+
+[speaker.notes]
+--
+So we start we a simple example, just one hostgroup and a single task which will run on the hostgroup.
+
+In other introduction I often see running Ansible tasks from the console, but I never use that, so I just skipped this for this session.
+--
+
+=== Display a message
+
+.`playbook.yml`
+[source, yml]
+----
+---
+- hosts: websphere_servers
+  become: yes
+  become_user: root
+  tasks:
+    - name: ensure selinux is set to permissive
+      selinux:
+        policy: targeted
+        state: permissive
+      register: selinux_status              # <.>
+
+    - debug:
+        msg: "SELinux changed. Please reboot the server to apply changes"
+      when: selinux_status.changed == true  # <.>
+----
+<.> register a variable to keep the status of this task
+<.> run only when the task had status changed
+
+[%notitle]
+=== Run Playbook Video Step 2
+
+.https://youtu.be/HPFuliVmtBE[]
+video::HPFuliVmtBE[youtube,options=autoplay,height=850px]
+
+=== Run Reboot as a task
+
+.`playbook.yml`
+[source, yml]
+----
+---
+- hosts: websphere_servers
+  become: yes
+  become_user: root
+  tasks:
+    - name: ensure selinux is set to permissive
+      selinux:
+        policy: targeted
+        state: permissive
+      register: selinux_status              # <.>
+
+    - name: reboot
+      reboot:
+        msg: "Reboot initiated from Ansible"
+        connect_timeout: 30
+        reboot_timeout: 120
+        test_command: whoami
+      when: selinux_status.changed == true
+----
+<.> imagine multiple tasks, you'll end up with tons of variables and complicated when clauses
+
+[%notitle]
+=== Run Playbook Video Step 3
+
+.https://youtu.be/JeeZMPitUs4[]
+video::JeeZMPitUs4[youtube,options=autoplay,height=850px]
+
+=== Handler
+
+* No need to register a variable
+* Just notify the handler (runs only when task status has changed)
+
+[source, yaml]
+----
+hosts: websphere_servers
+  become: yes
+  become_user: root
+  tasks:
+    - name: ensure selinux is set to permissive
+      selinux:
+        policy: targeted
+        state: permissive
+      notify: reboot      # <.>
+  handlers:
+    - name: reboot
+      reboot:
+        msg: "Reboot initiated from Ansible"
+        connect_timeout: 30
+        reboot_timeout: 120
+        test_command: whoami
+----
+<.> Notify the handler that status has changed
+
+
+[%notitle]
+=== Run Playbook Video Step 4
+
+.https://youtu.be/OLmGwdNncUM[]
+video::OLmGwdNncUM[youtube,options=autoplay,height=850px]
+
+=== Add more tasks
+
+[source, yaml]
+----
+---
+- hosts: websphere_servers
+  become: yes
+  become_user: root
+  tasks:
+    - name: ensure selinux is set to permissive
+      selinux:
+        policy: targeted
+        state: permissive
+      notify: reboot
+
+    - name: set number of open files in limits.conf
+      pam_limits:
+        domain: root
+        limit_type: '-'
+        limit_item: nofile
+        value: "65535"
+      notify: reboot  # <.>
+
+  handlers:
+    - name: reboot
+      reboot:
+        msg: "Reboot initiated from Ansible"
+        connect_timeout: 30
+        reboot_timeout: 120
+        test_command: whoami
+
+----
+<.> Reuse the same handler as before (one task must be status `changed` for a reboot)
+
+[%notitle]
+=== Run Playbook Video Step 5
+
+.https://youtu.be/ya5TXDRSsHk[]
+video::ya5TXDRSsHk[youtube,options=autoplay,height=850px]
+
+=== Install a package
+
+[source, yaml]
+----
+---
+- hosts: websphere_servers
+  become: yes
+  become_user: root
+  tasks:
+    - name: ensure selinux is set to permissive
+      selinux:
+        policy: targeted
+        state: permissive
+      notify: reboot
+
+    - name: Reboot if necessary
+      meta: flush_handlers        # <.>
+
+    - name: install compatibility package for installation manager
+      package:
+        name: compat-libstdc++-33.x86_64
+        state: present
+
+  handlers:
+    - name: reboot
+      reboot:
+        msg: "Reboot initiated from Ansible"
+        connect_timeout: 30
+        reboot_timeout: 120
+        test_command: whoami
+----
+<.> `flush_handler` initiates the handler to run if needed, normally it runs on the end of the role/playbook
+
+[%notitle]
+=== Run Playbook Video Step 6
+
+.https://youtu.be/HO1dkKlzQd0[]
+video::HO1dkKlzQd0[youtube,options=autoplay,height=850px]
+
+=== Removed `flush_handlers`
+
+.https://youtu.be/B4b0LZAhl9c[]
+video::B4b0LZAhl9c[youtube,options=autoplay,height=710px]
+
+=== Install multiple packages
+
+[source, yaml]
+----
+- name: install compatibility packages for installation manager
+      package:
+        name: "{{ item }}"    # <.>
+        state: present
+      with_items:             # <.>
+        - compat-libstdc++-33.x86_64
+        - compat-libstdc++-33.i686
+        - libstdc++.x86_64
+----
+<.> placeholder variable
+<.> all items will be installed
+
+[%notitle]
+=== Run Playbook Video Step 7
+
+.https://youtu.be/DhGghnYgG0k[]
+video::DhGghnYgG0k[youtube,options=autoplay,height=850px]
+
+=== Add additional servers
+
+[source, yaml]
+----
+[websphere_servers]
+cnx-was.stoeps.internal ansible_host=10.0.11.100
+
+[web_servers]   # <.>
+cnx-web.stoeps.internal ansible_host=10.0.11.101
+
+[installationmanager:children]  # <.>
+web_servers
+websphere_servers
+----
+<.> Add a second server group
+<.> Add children of the servergroups to installationmanager
+
+=== Add second hostgroup
+
+[source, yaml]
+----
+---
+- hosts: websphere_servers
+  tasks:
+    - name: ensure selinux is set to permissive
+      selinux:
+      [...]
+
+  handlers:
+    - name: reboot
+      [...]
+
+- hosts: installationmanager    # <.>
+  tasks:
+    - name: install compatibility package for installation manager
+      package:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - compat-libstdc++-33.x86_64
+        - compat-libstdc++-33.i686
+        - libstdc++.x86_64
+----
+<.> tasks for the new hostgroup (will install package to both server groups
+
+[%notitle]
+=== Run Playbook Video Step 8
+
+.https://youtu.be/P55Dp5EwpBY[]
+video::P55Dp5EwpBY[youtube,options=autoplay,height=850px]
+
+=== Add a group and a user
+
+[source, yaml]
+----
+- name: add group for WebSphere users
+  group:
+    name: was
+    state: present
+
+- name: add user for im and websphere (non_root)
+  user:
+    name: wassys
+    comment: WebSphere user
+    uid: 2000
+    group: was
+    shell: /bin/bash
+    state: present
+    password: "$6$40GE6/6h6A4UhpBT$kPtpBLe3Komc2bmadagr6S.v0/VRPJoJunEaMl5PBhAb4F5FTWsZff/6CYtTQlVm8Qa2wya4HVLM.Xp4iluLL0" # <.>
+----
+<.> Module needs hash, calculate with `python -c "import crypt; print crypt.crypt('password')"`
+
+
+[%notitle]
+=== Run Playbook Video Step 9
+
+.https://youtu.be/z06fB5WRLyE[]
+video::z06fB5WRLyE[youtube,options=autoplay,height=850px]
+
+=== Use variables
+
+.Add to `inventory`
+[source, ini]
+----
+...
+
+[installationmanager:vars]
+was_user=wassys
+was_user_password=password
+----
+
+[source, yaml]
+----
+- name: hash user password
+  shell: "python -c \"import crypt; print crypt.crypt('{{ was_user_password }}')\"" # <.>
+  register: was_user_password_hash      # <.>
+  changed_when: false
+- name: add user for im and websphere (non_root)
+  user:
+    name: "{{ was_user }}"
+    comment: WebSphere user
+    uid: 2000
+    state: present
+    update_password: on_create
+    password: "{{ was_user_password_hash.stdout }}"   # <.>
+----
+<.> Calculate the password hash
+<.> register variable
+<.> Use stdout (output of hash command) for password hash
+
+[%notitle]
+=== Run Playbook Video Step 10
+
+.https://youtu.be/GPxHlQuU7N8[]
+video::GPxHlQuU7N8[youtube,options=autoplay,height=850px]
+
+=== Create separate roles
+
+.`playbook.yml`
+[source, yaml]
+----
+- hosts: websphere_servers
+  become: yes
+  become_user: root
+  tasks:      # <.>
+    - name: ensure selinux is set to permissive
+      selinux:
+        policy: targeted
+        state: permissive
+      notify: reboot
+    ...
+
+  handlers:   # <.>
+    - name: reboot
+      reboot:
+        msg: "Reboot initiated from Ansible"
+        connect_timeout: 30
+        reboot_timeout: 120
+        test_command: whoami
+----
+<.> put into `roles/ansible-demo2/tasks/main.yml`
+<.> put into `roles/ansible-demo2/handlers/main.yml`
+
+[speaker.notes]
+--
+You already see that our playbook gets really long with just two or three groups and some tasks to run.
+
+So I recommed splitting the playbook into single roles and include these roles into the playbook.
+
+ansible-galaxy init role-name helps us to create the needed folder structure and so we just need to know where we have to move the parts that it still works.
+
+In our example I created two roles ansible-demo and ansible-demo2.
+--
+
+=== Variables defaults
+
+* Add a folder defaults to the role
+* Add used variables and their defaults
+* So even when you forget to define the variable, the role will run
+
+.`ansible_demo2/defaults/main.yaml`
+[source, yaml]
+----
+__websphere_user: "{{ was_user | default('wassys') }}"    # <.>
+__websphere_user_password: "{{ was_user_password | default('password') }}"  # <.>
+----
+<.> add a variable and read the value from variable was_user, if not present use default wassys
+<.> default password
+
+[%notitle]
+=== Run Playbook Video Step 11
+
+.https://youtu.be/Yca0gHKOkxI[]
+video::Yca0gHKOkxI[youtube,options=autoplay,height=850px]
+
+=== Use Ansible vault to secure the password
+
+* move the
+** variables to group_vars/installationmanager.yml
+** passwords to group_vars/all.yaml
+* encrypt all.yml
+
+[source, bash]
+----
+ansible-vault encrypt group_vars/all.yml
+ansible-playbook -i inventory playbook.yml --ask-vault-pass
+----
+
+[%notitle]
+=== Run Playbook Video Step 12
+
+.https://youtu.be/Ktyy3MKeoRQ[]
+video::Ktyy3MKeoRQ[youtube,options=autoplay,height=850px]
+
+== Run Ansible playbook
+
+* Manually through your shell
+* Ansible Tower (enterprise server, $$$)
+** On Windows use **Windows Subsystem for Linux** (WSL)
+* Ansible AWS (add link)
+* Jenkins (Pipeline)
+* Directly during provisioning of Vagrant and Terraform
+
+
+== Where to find Roles?
+
+* Simple said: Download or write them
+* Check https://galaxy.ansible.com[]
+* Download role `ansible-playbook install …`
+* roles and collections make Ansible modular
+* Download complete repositories like connections-automation
+
+[speaker.notes]
+--
+Mono repositories makes it easier to start, but much harder to adjust for your environments. Giving back changes is a nightmare.
+
+Better make a repository per role and share it through Galaxy
+--
+
+== Security
+
+* How do we store passwords or deployment keys
+* Ansible Vault
+** AES265 encrypted
+** Encrypted during ansible-playbook run
+* Ansible AWX
+** Allow users to run tasks and playbooks against hosts without having a root or user account on it
+
+== Where to start (Links)
+* Documentation
+** http://docs.ansible.com/intro_getting_started.html
+** https://github.com/orgs/ansible/people
+* Books
+** Jeff Geerling: Ansible for Devops
+* Youtube
+** https://youtube.com/playlist?list=PL2_OBreMn7FqZkvMYt6ATmgC0KAGGJNAN[Ansible 101 with Jeff Geerling]
+* https://www.redhat.com/sysadmin/container-images-ansible[Build and deploy container images and containers]
+
+== Administrator or Developer
+
+* Have a look at Ansible
+** Saves you a ton of time
+** Easy to deploy
+** Easy to deploy different environments
+*** Dev
+*** QA
+*** Test
+*** Production
+* KISS
+
+== Connections customers
+* Have a look at
+** https://github.com/HCL-TECH-SOFTWARE/connections-automation
+
+
+////
+  No Changes after this line!
+  Only header and footer is defined here
+////
+[subs="attributes"]
+++++
+<script type="text/javascript">
+    window.addEventListener("load", function() {
+
+        var iFrameDetection = (window === window.parent) ? false : true;
+        if (iFrameDetection === true){
+            var iframe = document.getElementByTagName("iframe");
+            var ftr = iframe.contentWindow.document.getElementsById("stoeps-footer");
+            var hdr = iframe.contentWindow.document.getElementsById("stoeps-header");
+            ftr.style.display = "none";
+            hdr.style.display = "none";
+        } else {
+            body = document.querySelector("body");
+            revealDiv = document.querySelector("body div.reveal")
+            footer = document.getElementById("stoeps-footer");
+            header = document.getElementById("stoeps-header");
+            body.appendChild(header);
+            revealDiv.appendChild(footer);
+        }
+
+
+    } );
+</script>
+<div id="stoeps-header" class="header">
+    <div style="float: right;"><img src="images/template/logo-vegard-inverse.png" style="height: 2em" alt="Vegard IT" />
+</div>
+<div id="stoeps-footer" class="footer" style="">
+<!--    <span id="date" class="element">{revdate}</span>-->
+    <div class="tags">
+        <span id="twitter" class="element"><a href="https://twitter.com/{twitter-tag}">Christoph Stoettner &#183; {twitter-tag}</a></span>
+        <span id="license" class="element"><div class="center"><a rel="license" href="http://creativecommons.org/licenses/{license-tag}/4.0/" ><img alt="Creative Commons License - CC {license-tag}" style="border-width:0" src="images/cc/{license-tag}.png" /></a></div></span>
+        <span id="conference" class="element">{conference-tag}</span>
+    </div>
+    <div class="liclong">
+        <span>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/{license-tag}/4.0/">{license-long}</a><span>
+    </div>
+</div>
+++++

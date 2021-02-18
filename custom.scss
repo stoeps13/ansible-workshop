@@ -1,0 +1,148 @@
+$on-background: #93a1a1;
+$warning-color: #df0101;
+$caution-color: #df7401;
+$important-color: #ffe600;
+$note-color: #41ff01;
+$tip-color: #00a2ff;
+
+#stoeps-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 10px;
+  color: $on-background;
+}
+
+#stoeps-footer {
+  position: absolute;
+  display: table;
+  width: 100%;
+  height: 30px;
+  bottom: 0;
+  font-size: 0.5em !important;
+  padding-top: 10px;
+  z-index: 3;
+  .tags {
+    display: table;
+    width: 100%;
+
+    a {
+      right: 4px;
+      bottom: 4px;
+      width: 93px;
+      color: $on-background;
+    }
+    .element {
+      width: 33%;
+      vertical-align: middle;
+    }
+  }
+  .liclong {
+    text-align: center;
+    font-size: 0.75em;
+    padding-bottom: 10px;
+    a {
+      color: $on-background;
+    }
+  }
+}
+.footer .tags span {
+  display: table-cell;
+  padding: 0px 15px 5px;
+}
+#twitter {
+  text-align: left;
+}
+#conference {
+  text-align: right;
+}
+#license {
+  text-align: center;
+}
+
+
+.reveal {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: sans-serif;
+    /* margin-top: -60px;*/
+  }
+  h1 {
+    margin-top: 200px !important;
+  }
+  pre {
+    code {
+      max-height: 800px;
+    }
+  }
+  section {
+    img {
+      background: transparent !important;
+      box-shadow: 0 !important;
+      border: 0 !important;
+    }
+  }
+  table {
+    border: 0 !important;
+  }
+  .slide-number {
+    background-color: transparent !important;
+  }
+  .title {
+    font-size: 0.65em;
+  }
+  .listingblock .title {
+    font-size: 0.75em;
+    margin: 20px auto;
+    text-align: left;
+  }
+  table {
+    margin-left: 1.5em;
+  }
+}
+
+.reveal .slides > section, .reveal .slides > section > section {
+  margin-top: -60px;
+}
+/* Conums in sources */
+.conum[data-value] {
+  color: #272822 !important;
+  background: rgb(247, 148, 33);
+}
+.colist td:not([class]):last-child {
+  padding: 0;
+}
+
+
+table tr th, table tr td {
+  font-size: 0.75em;
+}
+
+.admonitionblock {
+  font-size: 0.7em;
+  border: 1px solid $on-background;
+  border-radius: 10px;
+  background-color: transparent;
+  padding: 3px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+.warning {
+  color: $warning-color;
+  border-color: $warning-color;
+}
+.caution {
+  color: $caution-color;
+  border-color: $caution-color;
+}
+.important {
+  color: $important-color;
+  border-color: $important-color;
+}
+.note {
+  color: $note-color;
+  border-color: $note-color;
+}
+.tip {
+  color: $tip-color;
+  border-color: $tip-color;
+}
