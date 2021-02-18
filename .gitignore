@@ -1,0 +1,7 @@
+reveal.js
+node_modules
+build/html/*
+build/pdf/ansible101-session1.pdf
+.vscode
+.sass-cache
+.bundle
